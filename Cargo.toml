@@ -1,0 +1,12 @@
+[package]
+name = "spin-sdk-router"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+http_router = { git = "https://github.com/alexeuler/http_router", default-features = false }
+anyhow = "1"
+bytes = "1"
+http = "0.2"
+spin-sdk = { git = "https://github.com/fermyon/spin", tag = "v1.0.0" }
