@@ -74,7 +74,7 @@ impl Router {
             .entry(method)
             .or_insert_with(MethodRouter::new)
             .add(path, handler)
-            .unwrap();   
+            .unwrap();
     }
 
     pub fn new() -> Self {
