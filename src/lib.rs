@@ -105,11 +105,23 @@ macro_rules! router {
         {
             let mut router = spin_sdk_router::Router::new();
             $(
-                router.add($path, http::Method::$method, Box::new($h));
+                // router.add($path, http::Method::$method, Box::new($h));
+                spin_sdk_router::router!(@add router $method $path => $h);
             )*
             move |req: Request| -> anyhow::Result<Response> {
                 router.dispatch(req)
             }
         }
     };
+    (@add $r:ident POST $path:literal => $h:path) => {
+        $r.add($path, http::Method::POST, Box::new($h));
+    };
+    (@add $r:ident GET $path:literal => $h:path) => {
+        $r.add($path, http::Method::GET, Box::new($h));
+    };
+    (@add $r:ident ANY $path:literal => $h:path) => {
+        $r.add_all($path, Box::new($h));
+    };
+    
+    // TODO handle other methods
 }

@@ -3,8 +3,19 @@ use spin_sdk_router::Params;
 
 #[http_component]
 fn handle_simple(req: Request) -> anyhow::Result<Response> {
+    (spin_sdk_router::router! {
+        GET  "/hello/:planet" => api::hello_planet,
+        GET  "/nested/*"      => api::nested_wildcard,
+        POST "/hello/earth"   => api::static_route,
+        ANY  "/*"             => api::wildcard
+    })(req)
+}
+
+mod api {
+    use super::*;
+
     // /hello/:planet
-    fn hello_planet(_req: Request, params: Params) -> anyhow::Result<Response> {
+    pub fn hello_planet(_req: Request, params: Params) -> anyhow::Result<Response> {
         let planet = params.get("planet").expect("PLANET");
 
         Ok(http::Response::builder()
@@ -14,7 +25,7 @@ fn handle_simple(req: Request) -> anyhow::Result<Response> {
     }
 
     // /nested/*
-    fn nested_wildcard(_req: Request, params: Params) -> anyhow::Result<Response> {
+    pub fn nested_wildcard(_req: Request, params: Params) -> anyhow::Result<Response> {
         let capture = params.wildcard().unwrap_or_default();
 
         Ok(http::Response::builder()
@@ -24,7 +35,7 @@ fn handle_simple(req: Request) -> anyhow::Result<Response> {
     }
 
     // /*
-    fn wildcard(_req: Request, params: Params) -> anyhow::Result<Response> {
+    pub fn wildcard(_req: Request, params: Params) -> anyhow::Result<Response> {
         let capture = params.wildcard().unwrap_or_default();
         Ok(http::Response::builder()
             .status(http::StatusCode::OK)
@@ -33,17 +44,10 @@ fn handle_simple(req: Request) -> anyhow::Result<Response> {
     }
 
     // /hello/earth
-    fn static_route(_req: Request, _params: Params) -> anyhow::Result<Response> {
+    pub fn static_route(_req: Request, _params: Params) -> anyhow::Result<Response> {
         Ok(http::Response::builder()
             .status(http::StatusCode::OK)
             .body(None)
             .unwrap())
     }
-
-    (spin_sdk_router::router! {
-        GET "/hello/:planet" => hello_planet,
-        GET "/nested/*" => nested_wildcard,
-        GET "/hello/earth" => static_route,
-        GET "/*" => wildcard
-    })(req)
 }
