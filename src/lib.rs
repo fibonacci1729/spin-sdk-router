@@ -122,6 +122,6 @@ macro_rules! router {
     (@add $r:ident ANY $path:literal => $h:path) => {
         $r.add_all($path, Box::new($h));
     };
-    
+
     // TODO handle other methods
 }
