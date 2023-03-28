@@ -1,17 +1,12 @@
 use routefinder::{Captures, Router as MethodRouter};
 use std::collections::HashMap;
 
-type Handler = dyn Fn(Context) -> anyhow::Result<Response>;
+type Handler = dyn Fn(Request, Params) -> anyhow::Result<Response>;
 
 pub type Response = http::Response<Option<bytes::Bytes>>;
 pub type Request = http::Request<Option<bytes::Bytes>>;
 
 pub type Params = Captures<'static, 'static>;
-
-pub struct Context {
-    pub request: Request,
-    pub params: Params,
-}
 
 pub struct Router {
     method_map: HashMap<http::Method, MethodRouter<Box<Handler>>>,
@@ -28,7 +23,7 @@ impl Router {
         let method = request.method().to_owned();
         let path = request.uri().path().to_owned();
         let Selection { params, handler } = self.route(&path, method);
-        handler(Context { request, params })
+        handler(request, params)
     }
 
     fn route(&self, path: &str, method: http::Method) -> Selection<'_> {
@@ -90,14 +85,14 @@ impl Router {
     }
 }
 
-fn not_found(_ctx: Context) -> anyhow::Result<Response> {
+fn not_found(_req: Request, _params: Params) -> anyhow::Result<Response> {
     Ok(http::Response::builder()
         .status(http::StatusCode::NOT_FOUND)
         .body(None)
         .unwrap())
 }
 
-fn method_not_allowed(_ctx: Context) -> anyhow::Result<Response> {
+fn method_not_allowed(_req: Request, _params: Params) -> anyhow::Result<Response> {
     Ok(http::Response::builder()
         .status(http::StatusCode::METHOD_NOT_ALLOWED)
         .body(None)

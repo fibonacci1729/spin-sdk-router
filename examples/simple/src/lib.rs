@@ -1,36 +1,49 @@
 use spin_sdk::{http_component, http::{Request, Response}};
+use spin_sdk_router::Params;
 
 #[http_component]
 fn handle_simple(req: Request) -> anyhow::Result<Response> {
-    (spin_sdk_router::router! {
-        GET "/hello/:planet" => api::h1,
-        GET "/*" => api::h2,
-        GET "/nested/*" => api::h3,
-        GET "/hello/earth" => api::h4,
-        GET "/" => |ctx| { todo!("WHAT") }
-    })(req)
-}
-
-mod api {
-    use spin_sdk_router::{Context, Response};
-
     // /hello/:planet
-    pub fn h1(Context { request: _, params }: Context) -> anyhow::Result<Response> {
+    fn hello_planet(_req: Request, params: Params) -> anyhow::Result<Response> {
         let planet = params.get("planet").expect("PLANET");
-        println!("{planet}");
 
+        Ok(http::Response::builder()
+            .status(http::StatusCode::OK)
+            .body(Some(format!("{planet}").into()))
+            .unwrap())
+    }
+
+    // /nested/*
+    fn nested_wildcard(_req: Request, params: Params) -> anyhow::Result<Response> {
+        let capture = params.wildcard().unwrap_or_default();
+
+        Ok(http::Response::builder()
+            .status(http::StatusCode::OK)
+            .body(Some(format!("{capture}").into()))
+            .unwrap())
+    }
+
+    // /*
+    fn wildcard(_req: Request, params: Params) -> anyhow::Result<Response> {
+        let capture = params.wildcard().unwrap_or_default();
+        Ok(http::Response::builder()
+            .status(http::StatusCode::OK)
+            .body(Some(format!("{capture}").into()))
+            .unwrap())
+    }
+
+    // /hello/earth
+    fn static_route(_req: Request, _params: Params) -> anyhow::Result<Response> {
         Ok(http::Response::builder()
             .status(http::StatusCode::OK)
             .body(None)
             .unwrap())
     }
 
-    // /*
-    pub fn h2(_ctx: Context) -> anyhow::Result<Response> { todo!("h2") }
-    
-    // /nested/*
-    pub fn h3(_ctx: Context) -> anyhow::Result<Response> { todo!("h3") }
-    
-    // /hello/earth
-    pub fn h4(_ctx: Context) -> anyhow::Result<Response> { todo!("h4") }
+    (spin_sdk_router::router! {
+        GET "/hello/:planet" => hello_planet,
+        GET "/nested/*" => nested_wildcard,
+        GET "/hello/earth" => static_route,
+        GET "/*" => wildcard
+    })(req)
 }
