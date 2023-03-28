@@ -3,10 +3,9 @@ name = "spin-sdk-router"
 version = "0.1.0"
 edition = "2021"
 
-
 [dependencies]
-http_router = { git = "https://github.com/alexeuler/http_router", default-features = false }
-anyhow = "1"
-bytes = "1"
-http = "0.2"
-spin-sdk = { git = "https://github.com/fermyon/spin", tag = "v1.0.0" }
+anyhow = "1.0.70"
+bytes = "1.4.0"
+http = "0.2.9"
+route-recognizer = "0.3.1"
+routefinder = "0.5.3"

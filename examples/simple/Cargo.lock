@@ -3,15 +3,6 @@
 version = 3
 
 [[package]]
-name = "aho-corasick"
-version = "0.7.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc936419f96fa211c1b9166887b38e5e40b19958e5b895be7c1f93adec7071ac"
-dependencies = [
- "memchr",
-]
-
-[[package]]
 name = "anyhow"
 version = "1.0.70"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -27,6 +18,12 @@ dependencies = [
  "quote",
  "syn 2.0.10",
 ]
+
+[[package]]
+name = "autocfg"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
 name = "bitflags"
@@ -76,15 +73,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "http_router"
-version = "0.1.0"
-source = "git+https://github.com/alexeuler/http_router#b64f85943eb435b544979100a49a228e98aff0b3"
-dependencies = [
- "lazy_static",
- "regex",
-]
-
-[[package]]
 name = "id-arena"
 version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -95,12 +83,6 @@ name = "itoa"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "453ad9f582a441959e5f0d088b02ce04cfe8d51a8eaf077f12ac6d3e94164ca6"
-
-[[package]]
-name = "lazy_static"
-version = "1.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "memchr"
@@ -144,21 +126,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "regex"
-version = "1.7.3"
+name = "route-recognizer"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b1f693b24f6ac912f4893ef08244d70b6067480d2f1a46e950c9691e6749d1d"
-dependencies = [
- "aho-corasick",
- "memchr",
- "regex-syntax",
-]
+checksum = "afab94fb28594581f62d981211a9a4d53cc8130bbcbbb89a0440d9b8e81a7746"
 
 [[package]]
-name = "regex-syntax"
-version = "0.6.29"
+name = "routefinder"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f162c6dd7b008981e4d40210aca20b4bd0f9b60ca9271061b07f78537722f2e1"
+checksum = "94f8f99b10dedd317514253dda1fa7c14e344aac96e1f78149a64879ce282aca"
+dependencies = [
+ "smartcow",
+ "smartstring",
+]
 
 [[package]]
 name = "simple"
@@ -170,6 +151,26 @@ dependencies = [
  "spin-sdk",
  "spin-sdk-router",
  "wit-bindgen-rust",
+]
+
+[[package]]
+name = "smartcow"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "656fcb1c1fca8c4655372134ce87d8afdf5ec5949ebabe8d314be0141d8b5da2"
+dependencies = [
+ "smartstring",
+]
+
+[[package]]
+name = "smartstring"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3fb72c633efbaa2dd666986505016c32c3044395ceaf881518399d2f4127ee29"
+dependencies = [
+ "autocfg",
+ "static_assertions",
+ "version_check",
 ]
 
 [[package]]
@@ -209,9 +210,15 @@ dependencies = [
  "anyhow",
  "bytes",
  "http",
- "http_router",
- "spin-sdk",
+ "route-recognizer",
+ "routefinder",
 ]
+
+[[package]]
+name = "static_assertions"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "syn"
