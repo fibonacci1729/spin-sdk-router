@@ -1,4 +1,7 @@
-use spin_sdk::{http_component, http::{Request, Response}};
+use spin_sdk::{
+    http::{Request, Response},
+    http_component,
+};
 use spin_sdk_router::{router, Params};
 
 #[http_component]
@@ -28,3 +31,4 @@ mod api {
             .unwrap())
     }
 }
+

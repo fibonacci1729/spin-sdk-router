@@ -19,7 +19,7 @@ struct RouteMatch<'a> {
 }
 
 impl Router {
-    pub fn call(&self, request: Request) -> anyhow::Result<Response> {
+    pub fn handle(&self, request: Request) -> anyhow::Result<Response> {
         let method = request.method().to_owned();
         let path = request.uri().path().to_owned();
         let RouteMatch { params, handler } = self.find(&path, method);
@@ -75,18 +75,79 @@ impl Router {
         }
     }
 
-    pub fn add_all<F>(&mut self, path: &str, handler: F) where F: Fn(Request, Params) -> anyhow::Result<Response> + 'static {
+    pub fn all<F>(&mut self, path: &str, handler: F)
+    where
+        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+    {
         self.all_methods.add(path, Box::new(handler)).unwrap();
     }
 
-    pub fn add<F>(&mut self, path: &str, method: http::Method, handler: F) where F: Fn(Request, Params) -> anyhow::Result<Response> + 'static {
+    pub fn add<F>(&mut self, path: &str, method: http::Method, handler: F)
+    where
+        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+    {
         self.methods_map
             .entry(method)
             .or_insert_with(MethodRouter::new)
             .add(path, Box::new(handler))
             .unwrap();
     }
-    
+
+    pub fn get<F>(&mut self, path: &str, handler: F)
+    where
+        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+    {
+        self.methods_map
+            .entry(http::Method::GET)
+            .or_insert_with(MethodRouter::new)
+            .add(path, Box::new(handler))
+            .unwrap();
+    }
+
+    pub fn post<F>(&mut self, path: &str, handler: F)
+    where
+        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+    {
+        self.methods_map
+            .entry(http::Method::POST)
+            .or_insert_with(MethodRouter::new)
+            .add(path, Box::new(handler))
+            .unwrap();
+    }
+
+    pub fn delete<F>(&mut self, path: &str, handler: F)
+    where
+        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+    {
+        self.methods_map
+            .entry(http::Method::DELETE)
+            .or_insert_with(MethodRouter::new)
+            .add(path, Box::new(handler))
+            .unwrap();
+    }
+
+    pub fn put<F>(&mut self, path: &str, handler: F)
+    where
+        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+    {
+        self.methods_map
+            .entry(http::Method::PUT)
+            .or_insert_with(MethodRouter::new)
+            .add(path, Box::new(handler))
+            .unwrap();
+    }
+
+    pub fn patch<F>(&mut self, path: &str, handler: F)
+    where
+        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+    {
+        self.methods_map
+            .entry(http::Method::PATCH)
+            .or_insert_with(MethodRouter::new)
+            .add(path, Box::new(handler))
+            .unwrap();
+    }
+
     pub fn new() -> Self {
         Router {
             methods_map: HashMap::default(),
@@ -118,7 +179,7 @@ macro_rules! router {
                 spin_sdk_router::router!(@build router $method $path => $h);
             )*
             move |req: Request| -> anyhow::Result<Response> {
-                router.call(req)
+                router.handle(req)
             }
         }
     };
@@ -144,7 +205,7 @@ macro_rules! router {
         $r.add($path, http::Method::OPTIONS, $h);
     };
     (@build $r:ident _ $path:literal => $h:expr) => {
-        $r.add_all($path, $h);
+        $r.all($path, $h);
     };
 }
 
