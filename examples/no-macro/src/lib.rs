@@ -4,14 +4,14 @@ use spin_sdk_router::{Router, Params};
 #[http_component]
 fn handle_example(req: Request) -> anyhow::Result<Response> {
     let mut router = Router::new();
-    router.add("/hello/:planet", http::Method::GET, Box::new(api::hello_planet));
-    router.add_all("/*", Box::new(|_req, params| {
+    router.add("/hello/:planet", http::Method::GET, api::hello_planet);
+    router.add_all("/*", |_req, params| {
         let capture = params.wildcard().unwrap_or_default();
         Ok(http::Response::builder()
             .status(http::StatusCode::OK)
             .body(Some(format!("{capture}").into()))
             .unwrap())
-    }));
+    });
     router.call(req)
 }
 

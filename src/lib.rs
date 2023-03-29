@@ -75,18 +75,18 @@ impl Router {
         }
     }
 
-    pub fn add_all(&mut self, path: &str, handler: Box<Handler>) {
-        self.all_methods.add(path, handler).unwrap();
+    pub fn add_all<F>(&mut self, path: &str, handler: F) where F: Fn(Request, Params) -> anyhow::Result<Response> + 'static {
+        self.all_methods.add(path, Box::new(handler)).unwrap();
     }
 
-    pub fn add(&mut self, path: &str, method: http::Method, handler: Box<Handler>) {
+    pub fn add<F>(&mut self, path: &str, method: http::Method, handler: F) where F: Fn(Request, Params) -> anyhow::Result<Response> + 'static {
         self.methods_map
             .entry(method)
             .or_insert_with(MethodRouter::new)
-            .add(path, handler)
+            .add(path, Box::new(handler))
             .unwrap();
     }
-
+    
     pub fn new() -> Self {
         Router {
             methods_map: HashMap::default(),
@@ -123,28 +123,28 @@ macro_rules! router {
         }
     };
     (@build $r:ident HEAD $path:literal => $h:expr) => {
-        $r.add($path, http::Method::HEAD, Box::new($h));
+        $r.add($path, http::Method::HEAD, $h);
     };
     (@build $r:ident GET $path:literal => $h:expr) => {
-        $r.add($path, http::Method::GET, Box::new($h));
+        $r.add($path, http::Method::GET, $h);
     };
     (@build $r:ident PUT $path:literal => $h:expr) => {
-        $r.add($path, http::Method::PUT, Box::new($h));
+        $r.add($path, http::Method::PUT, $h);
     };
     (@build $r:ident POST $path:literal => $h:expr) => {
-        $r.add($path, http::Method::POST, Box::new($h));
+        $r.add($path, http::Method::POST, $h);
     };
     (@build $r:ident PATCH $path:literal => $h:expr) => {
-        $r.add($path, http::Method::PATCH, Box::new($h));
+        $r.add($path, http::Method::PATCH, $h);
     };
     (@build $r:ident DELETE $path:literal => $h:expr) => {
-        $r.add($path, http::Method::DELETE, Box::new($h));
+        $r.add($path, http::Method::DELETE, $h);
     };
     (@build $r:ident POST $path:literal => $h:expr) => {
-        $r.add($path, http::Method::OPTIONS, Box::new($h));
+        $r.add($path, http::Method::OPTIONS, $h);
     };
     (@build $r:ident _ $path:literal => $h:expr) => {
-        $r.add_all($path, Box::new($h));
+        $r.add_all($path, $h);
     };
 }
 
