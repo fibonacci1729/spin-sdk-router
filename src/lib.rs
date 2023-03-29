@@ -27,40 +27,50 @@ impl Router {
     }
 
     fn find(&self, path: &str, method: http::Method) -> RouteMatch<'_> {
-        if let Some(m) = self
+        let best_match = self
             .methods_map
             .get(&method)
-            .and_then(|r| r.best_match(path))
-        {
-            RouteMatch {
-                handler: m.handler(),
-                params: m.captures().into_owned(),
+            .and_then(|r| r.best_match(path));
+
+        if let Some(m) = best_match {
+            let params = m.captures().into_owned();
+            let handler = m.handler();
+            return RouteMatch { handler, params };
+        }
+
+        let best_match = self.all_methods.best_match(path);
+
+        match best_match {
+            Some(m) => {
+                let params = m.captures().into_owned();
+                let handler = m.handler();
+                RouteMatch { handler, params }
             }
-        } else if let Some(m) = self.all_methods.best_match(path) {
-            RouteMatch {
-                handler: m.handler(),
-                params: m.captures().into_owned(),
+            None if method == http::Method::HEAD => {
+                // If it is a HTTP HEAD request then check if there is a callback in the methods map
+                // if not then fallback to the behavior of HTTP GET else proceed as usual
+                self.find(path, http::Method::GET)
             }
-        } else if method == http::Method::HEAD {
-            // If it is a HTTP HEAD request then check if there is a callback in the methods map
-            // if not then fallback to the behavior of HTTP GET else proceed as usual
-            self.find(path, http::Method::GET)
-        } else if self
-            .methods_map
-            .iter()
-            .filter(|(k, _)| **k != method)
-            .any(|(_, r)| r.best_match(path).is_some())
-        {
-            // If this `path` can be handled by a callback registered with a different HTTP method
-            // should return 405 Method Not Allowed
-            RouteMatch {
-                handler: &method_not_allowed,
-                params: Captures::default(),
-            }
-        } else {
-            RouteMatch {
-                handler: &not_found,
-                params: Captures::default(),
+            None => {
+                let not_allowed = self
+                    .methods_map
+                    .iter()
+                    .filter(|(k, _)| **k != method)
+                    .any(|(_, r)| r.best_match(path).is_some());
+
+                if not_allowed {
+                    // If this `path` can be handled by a callback registered with a different HTTP method
+                    // should return 405 Method Not Allowed
+                    RouteMatch {
+                        handler: &method_not_allowed,
+                        params: Captures::default(),
+                    }
+                } else {
+                    RouteMatch {
+                        handler: &not_found,
+                        params: Captures::default(),
+                    }
+                }
             }
         }
     }
@@ -137,3 +147,6 @@ macro_rules! router {
         $r.add_all($path, Box::new($h));
     };
 }
+
+#[cfg(test)]
+mod tests {}
