@@ -9,56 +9,56 @@ pub type Request = http::Request<Option<bytes::Bytes>>;
 pub type Params = Captures<'static, 'static>;
 
 pub struct Router {
-    method_map: HashMap<http::Method, MethodRouter<Box<Handler>>>,
-    all_method_router: MethodRouter<Box<Handler>>,
+    methods_map: HashMap<http::Method, MethodRouter<Box<Handler>>>,
+    all_methods: MethodRouter<Box<Handler>>,
 }
 
-struct Selection<'a> {
-    pub params: Captures<'static, 'static>,
-    pub handler: &'a Handler,
+struct RouteMatch<'a> {
+    params: Captures<'static, 'static>,
+    handler: &'a Handler,
 }
 
 impl Router {
-    pub fn dispatch(&self, request: Request) -> anyhow::Result<Response> {
+    pub fn call(&self, request: Request) -> anyhow::Result<Response> {
         let method = request.method().to_owned();
         let path = request.uri().path().to_owned();
-        let Selection { params, handler } = self.route(&path, method);
+        let RouteMatch { params, handler } = self.find(&path, method);
         handler(request, params)
     }
 
-    fn route(&self, path: &str, method: http::Method) -> Selection<'_> {
+    fn find(&self, path: &str, method: http::Method) -> RouteMatch<'_> {
         if let Some(m) = self
-            .method_map
+            .methods_map
             .get(&method)
             .and_then(|r| r.best_match(path))
         {
-            Selection {
+            RouteMatch {
                 handler: m.handler(),
                 params: m.captures().into_owned(),
             }
-        } else if let Some(m) = self.all_method_router.best_match(path) {
-            Selection {
+        } else if let Some(m) = self.all_methods.best_match(path) {
+            RouteMatch {
                 handler: m.handler(),
                 params: m.captures().into_owned(),
             }
         } else if method == http::Method::HEAD {
-            // If it is a HTTP HEAD request then check if there is a callback in the endpoints map
+            // If it is a HTTP HEAD request then check if there is a callback in the methods map
             // if not then fallback to the behavior of HTTP GET else proceed as usual
-            self.route(path, http::Method::GET)
+            self.find(path, http::Method::GET)
         } else if self
-            .method_map
+            .methods_map
             .iter()
             .filter(|(k, _)| **k != method)
             .any(|(_, r)| r.best_match(path).is_some())
         {
             // If this `path` can be handled by a callback registered with a different HTTP method
             // should return 405 Method Not Allowed
-            Selection {
+            RouteMatch {
                 handler: &method_not_allowed,
                 params: Captures::default(),
             }
         } else {
-            Selection {
+            RouteMatch {
                 handler: &not_found,
                 params: Captures::default(),
             }
@@ -66,11 +66,11 @@ impl Router {
     }
 
     pub fn add_all(&mut self, path: &str, handler: Box<Handler>) {
-        self.all_method_router.add(path, handler).unwrap();
+        self.all_methods.add(path, handler).unwrap();
     }
 
     pub fn add(&mut self, path: &str, method: http::Method, handler: Box<Handler>) {
-        self.method_map
+        self.methods_map
             .entry(method)
             .or_insert_with(MethodRouter::new)
             .add(path, handler)
@@ -79,8 +79,8 @@ impl Router {
 
     pub fn new() -> Self {
         Router {
-            method_map: HashMap::default(),
-            all_method_router: MethodRouter::new(),
+            methods_map: HashMap::default(),
+            all_methods: MethodRouter::new(),
         }
     }
 }
@@ -101,27 +101,39 @@ fn method_not_allowed(_req: Request, _params: Params) -> anyhow::Result<Response
 
 #[macro_export]
 macro_rules! router {
-    ($($method:ident $path:literal => $h:path),*) => {
+    ($($method:tt $path:literal => $h:expr),*) => {
         {
             let mut router = spin_sdk_router::Router::new();
             $(
-                // router.add($path, http::Method::$method, Box::new($h));
-                spin_sdk_router::router!(@add router $method $path => $h);
+                spin_sdk_router::router!(@build router $method $path => $h);
             )*
             move |req: Request| -> anyhow::Result<Response> {
-                router.dispatch(req)
+                router.call(req)
             }
         }
     };
-    (@add $r:ident POST $path:literal => $h:path) => {
-        $r.add($path, http::Method::POST, Box::new($h));
+    (@build $r:ident HEAD $path:literal => $h:expr) => {
+        $r.add($path, http::Method::HEAD, Box::new($h));
     };
-    (@add $r:ident GET $path:literal => $h:path) => {
+    (@build $r:ident GET $path:literal => $h:expr) => {
         $r.add($path, http::Method::GET, Box::new($h));
     };
-    (@add $r:ident ANY $path:literal => $h:path) => {
+    (@build $r:ident PUT $path:literal => $h:expr) => {
+        $r.add($path, http::Method::PUT, Box::new($h));
+    };
+    (@build $r:ident POST $path:literal => $h:expr) => {
+        $r.add($path, http::Method::POST, Box::new($h));
+    };
+    (@build $r:ident PATCH $path:literal => $h:expr) => {
+        $r.add($path, http::Method::PATCH, Box::new($h));
+    };
+    (@build $r:ident DELETE $path:literal => $h:expr) => {
+        $r.add($path, http::Method::DELETE, Box::new($h));
+    };
+    (@build $r:ident POST $path:literal => $h:expr) => {
+        $r.add($path, http::Method::OPTIONS, Box::new($h));
+    };
+    (@build $r:ident _ $path:literal => $h:expr) => {
         $r.add_all($path, Box::new($h));
     };
-
-    // TODO handle other methods
 }

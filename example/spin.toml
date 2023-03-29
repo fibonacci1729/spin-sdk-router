@@ -1,13 +1,13 @@
 spin_manifest_version = "1"
 authors = ["Brian H <brian.hardock@fermyon.com>"]
-description = "A simple routing application"
-name = "simple"
+description = "An example routing application"
+name = "example"
 trigger = { type = "http", base = "/" }
 version = "0.1.0"
 
 [[component]]
-id = "simple"
-source = "target/wasm32-wasi/release/simple.wasm"
+id = "example"
+source = "target/wasm32-wasi/release/example.wasm"
 allowed_http_hosts = []
 [component.trigger]
 route = "/..."
