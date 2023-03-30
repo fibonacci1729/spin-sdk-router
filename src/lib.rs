@@ -100,6 +100,13 @@ impl Router {
         self.add(path, http::Method::GET, handler)
     }
 
+    pub fn head<F>(&mut self, path: &str, handler: F)
+    where
+        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+    {
+        self.add(path, http::Method::HEAD, handler)
+    }
+
     pub fn post<F>(&mut self, path: &str, handler: F)
     where
         F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
@@ -180,9 +187,6 @@ macro_rules! router {
     };
     (@build $r:ident DELETE $path:literal => $h:expr) => {
         $r.add($path, http::Method::DELETE, $h);
-    };
-    (@build $r:ident POST $path:literal => $h:expr) => {
-        $r.add($path, http::Method::OPTIONS, $h);
     };
     (@build $r:ident _ $path:literal => $h:expr) => {
         $r.all($path, $h);
