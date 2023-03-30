@@ -1,10 +1,13 @@
-use spin_sdk::{http_component, http::{Request, Response}};
-use spin_sdk_router::{Router, Params};
+use spin_sdk::{
+    http::{Request, Response},
+    http_component,
+};
+use spin_sdk_router::{Params, Router};
 
 #[http_component]
 fn handle_example(req: Request) -> anyhow::Result<Response> {
     let mut router = Router::new();
-    router.add("/hello/:planet", http::Method::GET, api::hello_planet);
+    router.get("/hello/:planet", api::hello_planet);
     router.add_all("/*", |_req, params| {
         let capture = params.wildcard().unwrap_or_default();
         Ok(http::Response::builder()
@@ -12,7 +15,8 @@ fn handle_example(req: Request) -> anyhow::Result<Response> {
             .body(Some(format!("{capture}").into()))
             .unwrap())
     });
-    router.call(req)
+
+    router.handle(req)
 }
 
 mod api {
@@ -28,3 +32,4 @@ mod api {
             .unwrap())
     }
 }
+
