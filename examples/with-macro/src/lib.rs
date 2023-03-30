@@ -6,7 +6,7 @@ use spin_sdk_router::{router, Params};
 
 #[http_component]
 fn handle_example(req: Request) -> anyhow::Result<Response> {
-    (router! {
+    let router = router! {
         GET "/hello/:planet" => api::hello_planet,
         _   "/*"             => |_req, params| {
             let capture = params.wildcard().unwrap_or_default();
@@ -15,7 +15,8 @@ fn handle_example(req: Request) -> anyhow::Result<Response> {
                 .body(Some(format!("{capture}").into()))
                 .unwrap())
         }
-    })(req)
+    };
+    router.handle(req)
 }
 
 mod api {

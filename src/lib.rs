@@ -165,28 +165,26 @@ macro_rules! router {
             $(
                 spin_sdk_router::router!(@build router $method $path => $h);
             )*
-            move |req: Request| -> anyhow::Result<Response> {
-                router.handle(req)
-            }
+            router
         }
     };
     (@build $r:ident HEAD $path:literal => $h:expr) => {
-        $r.add($path, http::Method::HEAD, $h);
+        $r.head($path, $h);
     };
     (@build $r:ident GET $path:literal => $h:expr) => {
-        $r.add($path, http::Method::GET, $h);
+        $r.get($path, $h);
     };
     (@build $r:ident PUT $path:literal => $h:expr) => {
-        $r.add($path, http::Method::PUT, $h);
+        $r.put($path, $h);
     };
     (@build $r:ident POST $path:literal => $h:expr) => {
-        $r.add($path, http::Method::POST, $h);
+        $r.post($path, $h);
     };
     (@build $r:ident PATCH $path:literal => $h:expr) => {
-        $r.add($path, http::Method::PATCH, $h);
+        $r.patch($path, $h);
     };
     (@build $r:ident DELETE $path:literal => $h:expr) => {
-        $r.add($path, http::Method::DELETE, $h);
+        $r.delete($path, $h);
     };
     (@build $r:ident _ $path:literal => $h:expr) => {
         $r.all($path, $h);
