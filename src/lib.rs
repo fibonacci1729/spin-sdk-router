@@ -97,55 +97,35 @@ impl Router {
     where
         F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
     {
-        self.methods_map
-            .entry(http::Method::GET)
-            .or_insert_with(MethodRouter::new)
-            .add(path, Box::new(handler))
-            .unwrap();
+        self.add(path, http::Method::GET, handler)
     }
 
     pub fn post<F>(&mut self, path: &str, handler: F)
     where
         F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
     {
-        self.methods_map
-            .entry(http::Method::POST)
-            .or_insert_with(MethodRouter::new)
-            .add(path, Box::new(handler))
-            .unwrap();
+        self.add(path, http::Method::POST, handler)
     }
 
     pub fn delete<F>(&mut self, path: &str, handler: F)
     where
         F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
     {
-        self.methods_map
-            .entry(http::Method::DELETE)
-            .or_insert_with(MethodRouter::new)
-            .add(path, Box::new(handler))
-            .unwrap();
+        self.add(path, http::Method::DELETE, handler)
     }
 
     pub fn put<F>(&mut self, path: &str, handler: F)
     where
         F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
     {
-        self.methods_map
-            .entry(http::Method::PUT)
-            .or_insert_with(MethodRouter::new)
-            .add(path, Box::new(handler))
-            .unwrap();
+        self.add(path, http::Method::PUT, handler)
     }
 
     pub fn patch<F>(&mut self, path: &str, handler: F)
     where
         F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
     {
-        self.methods_map
-            .entry(http::Method::PATCH)
-            .or_insert_with(MethodRouter::new)
-            .add(path, Box::new(handler))
-            .unwrap();
+        self.add(path, http::Method::PATCH, handler)
     }
 
     pub fn new() -> Self {
