@@ -8,7 +8,7 @@ use spin_sdk_router::{Params, Router};
 fn handle_example(req: Request) -> anyhow::Result<Response> {
     let mut router = Router::new();
     router.get("/hello/:planet", api::hello_planet);
-    router.add_all("/*", |_req, params| {
+    router.all("/*", |_req, params| {
         let capture = params.wildcard().unwrap_or_default();
         Ok(http::Response::builder()
             .status(http::StatusCode::OK)
