@@ -242,6 +242,26 @@ mod tests {
     }
 
     #[test]
+    fn test_param() {
+        fn echo_param(req: Request, params: Params) -> Result<Response> {
+            match params.get("x") {
+                Some(path) => Ok(http::Response::builder()
+                    .status(http::StatusCode::OK)
+                    .body(Some(path.to_string().into()))?),
+                None => not_found(req, params),
+            }
+        }
+
+        let mut router = Router::default();
+        router.get("/:x", echo_param);
+
+        let req = make_request(http::Method::GET, "/y");
+        let res = router.handle(req).unwrap();
+
+        assert_eq!(res.into_body().unwrap(), "y".to_string());
+    }
+
+    #[test]
     fn test_wildcard() {
         fn echo_wildcard(req: Request, params: Params) -> Result<Response> {
             match params.wildcard() {
