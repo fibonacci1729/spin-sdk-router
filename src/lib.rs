@@ -240,4 +240,24 @@ mod tests {
         let res = router.handle(req).unwrap();
         assert_eq!(res.status(), http::StatusCode::NOT_FOUND);
     }
+
+    #[test]
+    fn test_wildcard() {
+        fn echo_wildcard(req: Request, params: Params) -> Result<Response> {
+            match params.wildcard() {
+                Some(path) => Ok(http::Response::builder()
+                    .status(http::StatusCode::OK)
+                    .body(Some(path.to_string().into()))?),
+                None => not_found(req, params),
+            }
+        }
+
+        let mut router = Router::default();
+        router.get("/*", echo_wildcard);
+
+        let req = make_request(http::Method::GET, "/foo/bar");
+        let res = router.handle(req).unwrap();
+        assert_eq!(res.status(), http::StatusCode::OK);
+        assert_eq!(res.into_body().unwrap(), "foo/bar".to_string());
+    }
 }
