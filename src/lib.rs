@@ -227,6 +227,15 @@ mod tests {
             .unwrap()
     }
 
+    fn echo_param(req: Request, params: Params) -> Result<Response> {
+        match params.get("x") {
+            Some(path) => Ok(http::Response::builder()
+                .status(http::StatusCode::OK)
+                .body(Some(path.to_string().into()))?),
+            None => not_found(req, params),
+        }
+    }
+
     #[test]
     fn test_not_found() {
         fn h1(_req: Request, _params: Params) -> Result<Response> {
@@ -242,16 +251,26 @@ mod tests {
     }
 
     #[test]
-    fn test_param() {
-        fn echo_param(req: Request, params: Params) -> Result<Response> {
-            match params.get("x") {
-                Some(path) => Ok(http::Response::builder()
-                    .status(http::StatusCode::OK)
-                    .body(Some(path.to_string().into()))?),
-                None => not_found(req, params),
-            }
+    fn test_multi_param() {
+        fn multiply(_req: Request, params: Params) -> Result<Response> {
+            let x: i64 = params.get("x").unwrap().parse()?;
+            let y: i64 = params.get("y").unwrap().parse()?;
+            Ok(http::Response::builder()
+                .status(http::StatusCode::OK)
+                .body(Some(format!("{result}", result = x * y).into()))?)
         }
 
+        let mut router = Router::default();
+        router.get("/multiply/:x/:y", multiply);
+
+        let req = make_request(http::Method::GET, "/multiply/2/4");
+        let res = router.handle(req).unwrap();
+
+        assert_eq!(res.into_body().unwrap(), "8".to_string());
+    }
+
+    #[test]
+    fn test_param() {
         let mut router = Router::default();
         router.get("/:x", echo_param);
 
@@ -279,6 +298,16 @@ mod tests {
         let res = router.handle(req).unwrap();
         assert_eq!(res.status(), http::StatusCode::OK);
         assert_eq!(res.into_body().unwrap(), "foo/bar".to_string());
+    }
+
+    #[test]
+    fn test_wildcard_last_segment() {
+        let mut router = Router::default();
+        router.get("/:x/*", echo_param);
+
+        let req = make_request(http::Method::GET, "/foo/bar");
+        let res = router.handle(req).unwrap();
+        assert_eq!(res.into_body().unwrap(), "foo".to_string());
     }
 
     #[test]
