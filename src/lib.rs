@@ -214,3 +214,30 @@ macro_rules! router {
         $r.all($path, $h);
     };
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_request(method: http::Method, path: &str) -> Request {
+        http::Request::builder()
+            .method(method)
+            .uri(path)
+            .body(None)
+            .unwrap()
+    }
+
+    #[test]
+    fn test_not_found() {
+        fn h1(_req: Request, _params: Params) -> Result<Response> {
+            Ok(http::Response::builder().status(200).body(None)?)
+        }
+
+        let mut router = Router::default();
+        router.get("/h1/:param", h1);
+
+        let req = make_request(http::Method::GET, "/h1/");
+        let res = router.handle(req).unwrap();
+        assert_eq!(res.status(), http::StatusCode::NOT_FOUND);
+    }
+}
