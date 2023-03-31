@@ -237,6 +237,16 @@ mod tests {
     }
 
     #[test]
+    fn test_method_not_allowed() {
+        let mut router = Router::default();
+        router.get("/:x", echo_param);
+
+        let req = make_request(http::Method::POST, "/foobar");
+        let res = router.handle(req).unwrap();
+        assert_eq!(res.status(), http::StatusCode::METHOD_NOT_ALLOWED);
+    }
+
+    #[test]
     fn test_not_found() {
         fn h1(_req: Request, _params: Params) -> Result<Response> {
             Ok(http::Response::builder().status(200).body(None)?)
