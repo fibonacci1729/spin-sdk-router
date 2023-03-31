@@ -260,4 +260,28 @@ mod tests {
         assert_eq!(res.status(), http::StatusCode::OK);
         assert_eq!(res.into_body().unwrap(), "foo/bar".to_string());
     }
+
+    #[test]
+    fn test_ambiguous_wildcard_vs_star() {
+        fn h1(_req: Request, _params: Params) -> Result<Response> {
+            Ok(http::Response::builder()
+                .status(http::StatusCode::OK)
+                .body(Some("one/two".into()))?)
+        }
+
+        fn h2(_req: Request, _params: Params) -> Result<Response> {
+            Ok(http::Response::builder()
+                .status(http::StatusCode::OK)
+                .body(Some("posts/*".into()))?)
+        }
+
+        let mut router = Router::default();
+        router.get("/:one/:two", h1);
+        router.get("/posts/*", h2);
+
+        let req = make_request(http::Method::GET, "/posts/2");
+        let res = router.handle(req).unwrap();
+
+        assert_eq!(res.into_body().unwrap(), "posts/*".to_string());
+    }
 }
