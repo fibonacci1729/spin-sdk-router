@@ -1,16 +1,29 @@
+//! The Spin SDK HTTP Router for Rust.
+#![deny(missing_docs)]
+
+use anyhow::Result;
 use routefinder::{Captures, Router as MethodRouter};
 use std::collections::HashMap;
 
 type Handler = dyn Fn(Request, Params) -> anyhow::Result<Response>;
 
+/// The Spin SDK response type.
 pub type Response = http::Response<Option<bytes::Bytes>>;
+/// The Spin SDK request type.
 pub type Request = http::Request<Option<bytes::Bytes>>;
-
+/// Route parameters extracted from a URI that match a route pattern.
 pub type Params = Captures<'static, 'static>;
 
+/// The Spin SDK HTTP router.
 pub struct Router {
     methods_map: HashMap<http::Method, MethodRouter<Box<Handler>>>,
     all_methods: MethodRouter<Box<Handler>>,
+}
+
+impl Default for Router {
+    fn default() -> Router {
+        Router::new()
+    }
 }
 
 struct RouteMatch<'a> {
@@ -19,7 +32,8 @@ struct RouteMatch<'a> {
 }
 
 impl Router {
-    pub fn handle(&self, request: Request) -> anyhow::Result<Response> {
+    /// Dispatches a request to the appropriate handler along with the URI parameters.
+    pub fn handle(&self, request: Request) -> Result<Response> {
         let method = request.method().to_owned();
         let path = request.uri().path().to_owned();
         let RouteMatch { params, handler } = self.find(&path, method);
@@ -75,16 +89,18 @@ impl Router {
         }
     }
 
+    /// Register a handler at the path for all methods.
     pub fn all<F>(&mut self, path: &str, handler: F)
     where
-        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+        F: Fn(Request, Params) -> Result<Response> + 'static,
     {
         self.all_methods.add(path, Box::new(handler)).unwrap();
     }
 
+    /// Register a handler at the path for the specified HTTP method.
     pub fn add<F>(&mut self, path: &str, method: http::Method, handler: F)
     where
-        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+        F: Fn(Request, Params) -> Result<Response> + 'static,
     {
         self.methods_map
             .entry(method)
@@ -93,48 +109,55 @@ impl Router {
             .unwrap();
     }
 
+    /// Register a handler at the path for the HTTP GET method.
     pub fn get<F>(&mut self, path: &str, handler: F)
     where
-        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+        F: Fn(Request, Params) -> Result<Response> + 'static,
     {
         self.add(path, http::Method::GET, handler)
     }
 
+    /// Register a handler at the path for the HTTP HEAD method.
     pub fn head<F>(&mut self, path: &str, handler: F)
     where
-        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+        F: Fn(Request, Params) -> Result<Response> + 'static,
     {
         self.add(path, http::Method::HEAD, handler)
     }
 
+    /// Register a handler at the path for the HTTP POST method.
     pub fn post<F>(&mut self, path: &str, handler: F)
     where
-        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+        F: Fn(Request, Params) -> Result<Response> + 'static,
     {
         self.add(path, http::Method::POST, handler)
     }
 
+    /// Register a handler at the path for the HTTP DELETE method.
     pub fn delete<F>(&mut self, path: &str, handler: F)
     where
-        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+        F: Fn(Request, Params) -> Result<Response> + 'static,
     {
         self.add(path, http::Method::DELETE, handler)
     }
 
+    /// Register a handler at the path for the HTTP PUT method.
     pub fn put<F>(&mut self, path: &str, handler: F)
     where
-        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+        F: Fn(Request, Params) -> Result<Response> + 'static,
     {
         self.add(path, http::Method::PUT, handler)
     }
 
+    /// Register a handler at the path for the HTTP PATCH method.
     pub fn patch<F>(&mut self, path: &str, handler: F)
     where
-        F: Fn(Request, Params) -> anyhow::Result<Response> + 'static,
+        F: Fn(Request, Params) -> Result<Response> + 'static,
     {
         self.add(path, http::Method::PATCH, handler)
     }
 
+    /// Construct a new Router.
     pub fn new() -> Self {
         Router {
             methods_map: HashMap::default(),
@@ -143,20 +166,21 @@ impl Router {
     }
 }
 
-fn not_found(_req: Request, _params: Params) -> anyhow::Result<Response> {
+fn not_found(_req: Request, _params: Params) -> Result<Response> {
     Ok(http::Response::builder()
         .status(http::StatusCode::NOT_FOUND)
         .body(None)
         .unwrap())
 }
 
-fn method_not_allowed(_req: Request, _params: Params) -> anyhow::Result<Response> {
+fn method_not_allowed(_req: Request, _params: Params) -> Result<Response> {
     Ok(http::Response::builder()
         .status(http::StatusCode::METHOD_NOT_ALLOWED)
         .body(None)
         .unwrap())
 }
 
+/// A macro to help with constructing a Router from a stream of tokens.
 #[macro_export]
 macro_rules! router {
     ($($method:tt $path:literal => $h:expr),*) => {
@@ -190,6 +214,3 @@ macro_rules! router {
         $r.all($path, $h);
     };
 }
-
-#[cfg(test)]
-mod tests {}
